@@ -1,3 +1,4 @@
+import json
 import sqlite3
 import pandas as pd
 import tkinter as tk
@@ -118,7 +119,12 @@ def update_book_status_gui():
             # Buscar informações do emprestador
             if new_status.lower() == 'emprestado' and borrower_cpf:
                 usuario_info = buscar_usuario(int(borrower_cpf))
-                borrower = usuario_info[0] if usuario_info else 'Desconhecido'
+                borrower = usuario_info[1] if usuario_info else 'Desconhecido'
+                print("*"*50)
+                print(borrower)
+                print(usuario_info)
+                print(json.dumps(usuario_info))
+                print(json.dumps(usuario_info)[1])
             else:
                 borrower = None
             
