@@ -2,6 +2,8 @@ import sqlite3
 import pandas as pd
 import tkinter as tk
 from tkinter import messagebox, simpledialog, ttk
+from usuario import buscar_usuario
+
 
 # Nome do arquivo do banco de dados e da planilha Excel
 db_file = 'biblioteca.db'
@@ -89,34 +91,43 @@ def add_book_gui():
 def update_book_status_gui():
     book_id = simpledialog.askinteger("ID do Livro", "Digite o ID do livro:")
     
-    # Cria uma janela de diálogo para selecionar o status
-    status_window = tk.Toplevel(root)
-    status_window.title("Atualizar Status")
-    
-    # Lista de opções para o status
-    status_options = ["Disponível", "Emprestado"]
-    
-    # Cria um Combobox para selecionar o status
-    status_label = tk.Label(status_window, text="Selecione o status do livro:")
-    status_label.pack(padx=10, pady=5)
-    status_combobox = ttk.Combobox(status_window, values=status_options)
-    status_combobox.pack(padx=10, pady=5)
-    
-    # Adiciona um campo para o nome do emprestador
-    borrower_label = tk.Label(status_window, text="Nome do emprestador (deixe em branco se disponível):")
-    borrower_label.pack(padx=10, pady=5)
-    borrower_entry = tk.Entry(status_window)
-    borrower_entry.pack(padx=10, pady=5)
-    
-    def on_update():
-        new_status = status_combobox.get()
-        borrower = borrower_entry.get() if new_status.lower() == 'emprestado' else None
-        if book_id and new_status:
-            update_book_status(book_id, new_status, borrower)
-            status_window.destroy()
-    
-    update_button = tk.Button(status_window, text="Atualizar", command=on_update)
-    update_button.pack(padx=10, pady=10)
+    if book_id:
+        # Cria uma janela de diálogo para selecionar o status
+        status_window = tk.Toplevel(root)
+        status_window.title("Atualizar Status")
+        
+        # Lista de opções para o status
+        status_options = ["Disponível", "Emprestado"]
+        
+        # Cria um Combobox para selecionar o status
+        status_label = tk.Label(status_window, text="Selecione o status do livro:")
+        status_label.pack(padx=10, pady=5)
+        status_combobox = ttk.Combobox(status_window, values=status_options)
+        status_combobox.pack(padx=10, pady=5)
+        
+        # Adiciona um campo para o nome do emprestador
+        borrower_label = tk.Label(status_window, text="ID do emprestador (deixe em branco se disponível):")
+        borrower_label.pack(padx=10, pady=5)
+        borrower_entry = tk.Entry(status_window)
+        borrower_entry.pack(padx=10, pady=5)
+
+        def on_update():
+            new_status = status_combobox.get()
+            borrower_cpf = borrower_entry.get()
+            
+            # Buscar informações do emprestador
+            if new_status.lower() == 'emprestado' and borrower_cpf:
+                usuario_info = buscar_usuario(int(borrower_cpf))
+                borrower = usuario_info[0] if usuario_info else 'Desconhecido'
+            else:
+                borrower = None
+            
+            if new_status:
+                update_book_status(book_id, new_status, borrower)
+                status_window.destroy()
+
+        update_button = tk.Button(status_window, text="Atualizar", command=on_update)
+        update_button.pack(padx=10, pady=10)
 
 def remove_book_gui():
     book_id = simpledialog.askinteger("ID do Livro", "Digite o ID do livro:")
