@@ -15,9 +15,9 @@ def add_borrower_column():
     with sqlite3.connect(db_file) as conn:
         cursor = conn.cursor()
         try:
-            cursor.execute("ALTER TABLE books ADD COLUMN borrower TEXT DEFAULT NULL")
+            cursor.execute("ALTER TABLE books ADD COLUMN alugado TEXT DEFAULT NULL")
             conn.commit()
-            print("Coluna 'borrower' adicionada com sucesso.")
+            print("Coluna 'alugado' adicionada com sucesso.")
         except sqlite3.OperationalError as e:
             print(f"Erro ao adicionar a coluna: {e}")
 
@@ -55,7 +55,7 @@ def add_book(title, author, year, category):
 def update_book_status(book_id, new_status, borrower=None):
     with sqlite3.connect(db_file) as conn:
         cursor = conn.cursor()
-        if new_status.lower() == 'emprestado' and borrower:
+        if new_status.lower() == 'alugado' and borrower:
             cursor.execute('''UPDATE books SET status = ?, borrower = ? WHERE id = ?''', (new_status, borrower, book_id))
         elif new_status.lower() == 'disponível':
             cursor.execute('''UPDATE books SET status = ?, borrower = NULL WHERE id = ?''', (new_status, book_id))
@@ -74,6 +74,25 @@ def remove_book(book_id):
         messagebox.showinfo("Sucesso", "Livro removido com sucesso.")
         update_book_list()  # Atualizar a lista de livros
         export_to_excel()
+
+# Pesquisar o livro
+def search_books():
+    search_term = search_entry.get()
+    if search_term:
+        # Limpa a lista existente
+        for row in tree.get_children():
+            tree.delete(row)
+
+        with sqlite3.connect(db_file) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM books WHERE title LIKE ? OR author LIKE ?", 
+                           ('%' + search_term + '%', '%' + search_term + '%'))
+            rows = cursor.fetchall()
+            for row in rows:
+                tree.insert("", tk.END, values=row)
+
+    else:
+        update_book_list()  # Se a pesquisa estiver vazia, atualiza a lista completa
 
 def export_to_excel():
     with sqlite3.connect(db_file) as conn:
@@ -98,7 +117,7 @@ def update_book_status_gui():
         status_window.title("Atualizar Status")
         
         # Lista de opções para o status
-        status_options = ["Disponível", "Emprestado"]
+        status_options = ["Disponível", "Alugado"]
         
         # Cria um Combobox para selecionar o status
         status_label = tk.Label(status_window, text="Selecione o status do livro:")
@@ -107,7 +126,7 @@ def update_book_status_gui():
         status_combobox.pack(padx=10, pady=5)
         
         # Adiciona um campo para o nome do emprestador
-        borrower_label = tk.Label(status_window, text="ID do emprestador (deixe em branco se disponível):")
+        borrower_label = tk.Label(status_window, text="CPF do locatário (deixe em branco se disponível):")
         borrower_label.pack(padx=10, pady=5)
         borrower_entry = tk.Entry(status_window)
         borrower_entry.pack(padx=10, pady=5)
@@ -116,7 +135,7 @@ def update_book_status_gui():
             new_status = status_combobox.get()
             borrower_cpf = borrower_entry.get()
             
-            # Buscar informações do emprestador
+            # Buscar informações do locatário
             if new_status.lower() == 'emprestado' and borrower_cpf:
                 usuario_info = buscar_usuario(int(borrower_cpf))
                 borrower = usuario_info[1] if usuario_info else 'Desconhecido'
@@ -155,26 +174,57 @@ def update_book_list():
         for row in rows:
             tree.insert("", tk.END, values=row)
 
-# Interface gráfica com tkinter
 def main_gui():
-    global tree, root  # Global para atualizar a lista de livros
+    global tree, root, search_entry   # Global para atualizar a lista de livros
     
     root = tk.Tk()
     root.title("Gerenciador de Livros")
 
-    # Botões
-    tk.Button(root, text="Adicionar Livro", command=add_book_gui).pack(pady=10)
-    tk.Button(root, text="Atualizar Status", command=update_book_status_gui).pack(pady=10)
-    tk.Button(root, text="Remover Livro", command=remove_book_gui).pack(pady=10)
+    # Estilo
+    style = ttk.Style()
+    style.configure("TButton", padding=6, relief="flat", background="#0078D7", foreground="white")
+    style.map("TButton", background=[("active", "#0056A3")])
+
+    # Frame para Pesquisa
+    frame_search = tk.Frame(root)
+    frame_search.pack(pady=10)
+
+    search_label = tk.Label(frame_search, text="Pesquisar Livro:")
+    search_label.pack(side=tk.LEFT)
+
+    search_entry = tk.Entry(frame_search)
+    search_entry.pack(side=tk.LEFT, padx=5)
+
     
-    # Exibição de livros
+    # Frame para Botões
+    frame_buttons = tk.Frame(root)
+    frame_buttons.pack(pady=10)
+
+    tk.Label(root, text="Gerenciador de Livros", font=("Arial", 16)).pack(pady=10)
+
+    tk.Button(frame_buttons, text="Adicionar Livro", command=add_book_gui).pack(side=tk.LEFT, padx=5)
+    tk.Button(frame_buttons, text="Atualizar Status", command=update_book_status_gui).pack(side=tk.LEFT, padx=5)
+    tk.Button(frame_buttons, text="Remover Livro", command=remove_book_gui).pack(side=tk.LEFT, padx=5)
+    search_button = tk.Button(frame_search, text="Buscar", command=search_books)
+    search_button.pack(side=tk.LEFT, padx=5)
+
+
+    # Exibição de livros com scrollbar
+    frame_tree = tk.Frame(root)
+    frame_tree.pack(expand=True, fill=tk.BOTH)
+
+    scrollbar = tk.Scrollbar(frame_tree)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
     columns = ("id", "title", "author", "year", "category", "status", "borrower")
-    tree = ttk.Treeview(root, columns=columns, show='headings')
+    tree = ttk.Treeview(frame_tree, columns=columns, show='headings', yscrollcommand=scrollbar.set)
+    scrollbar.config(command=tree.yview)
+    tree.pack(expand=True, fill=tk.BOTH)
+
     for col in columns:
         tree.heading(col, text=col.capitalize())
         tree.column(col, width=100)
-    tree.pack(expand=True, fill=tk.BOTH)
-    
+
     update_book_list()  # Atualiza a lista de livros ao iniciar
     
     root.mainloop()

@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import tkinter as tk
 from tkinter import messagebox, simpledialog, ttk
+import re
 
 # Nome do arquivo do banco de dados e da planilha Excel
 db_file = 'usuarios.db'
@@ -35,11 +36,11 @@ def add_user(nome, email, telefone, cpf):
             update_user_list()  # Atualizar a lista de usuários
             export_to_excel()
 
-def update_user(user_id, new_name, new_email, new_phone, new_cpf):
+def update_user(user_id, new_name, new_email, new_phone):
     with sqlite3.connect(db_file) as conn:
         cursor = conn.cursor()
-        cursor.execute('''UPDATE usuarios SET nome = ?, email = ?, telefone = ?, cpf = ? WHERE id = ?''', 
-                       (new_name, new_email, new_phone, user_id, new_cpf))
+        cursor.execute('''UPDATE usuarios SET nome = ?, email = ?, telefone = ? WHERE id = ?''', 
+                       (new_name, new_email, new_phone, user_id))
         conn.commit()
         messagebox.showinfo("Sucesso", "Usuário atualizado com sucesso.")
         update_user_list()  # Atualizar a lista de usuários
@@ -58,6 +59,34 @@ def export_to_excel():
     with sqlite3.connect(db_file) as conn:
         df = pd.read_sql_query("SELECT * FROM usuarios", conn)
     df.to_excel(excel_file, index=False, engine='openpyxl')
+
+def validar_cpf(cpf):
+    # Remover caracteres não numéricos e espaços extras
+    cpf = re.sub(r'\D', '', cpf).strip()
+
+    # Verificar se tem exatamente 11 dígitos
+    if len(cpf) != 11:
+        return False
+
+    # Verificar se todos os dígitos são iguais, o que torna o CPF inválido
+    if cpf == cpf[0] * 11:
+        return False
+
+    # Função auxiliar para calcular cada dígito verificador
+    def calcular_digito(cpf, peso_inicial):
+        soma = sum(int(cpf[i]) * (peso_inicial - i) for i in range(peso_inicial - 1))
+        digito = (soma * 10) % 11
+        return 0 if digito == 10 else digito
+
+    # Verificar primeiro dígito verificador
+    if calcular_digito(cpf, 10) != int(cpf[9]):
+        return False
+
+    # Verificar segundo dígito verificador
+    if calcular_digito(cpf, 11) != int(cpf[10]):
+        return False
+
+    return True
 
 def buscar_usuario(cpf):
     if not os.path.exists(db_file):
@@ -109,26 +138,37 @@ def update_user_list():
 # Interface gráfica com tkinter
 def main_gui():
     global tree, root  # Global para atualizar a lista de usuários
-    
+
     root = tk.Tk()
     root.title("Gerenciador de Usuários")
 
-    # Botões
-    tk.Button(root, text="Adicionar Usuário", command=add_user_gui).pack(pady=10)
-    tk.Button(root, text="Atualizar Usuário", command=update_user_gui).pack(pady=10)
-    tk.Button(root, text="Remover Usuário", command=remove_user_gui).pack(pady=10)
+    # Definindo as colunas antes de usar
+    columns = ("id", "nome", "email", "telefone", "cpf")
     
-    # Exibição de usuários
-    columns = ("id", "nome", "email", "telefone", "CPF")
-    tree = ttk.Treeview(root, columns=columns, show='headings')
+    # Botões
+    frame_buttons = tk.Frame(root)
+    frame_buttons.pack(pady=10)
+
+    tk.Button(frame_buttons, text="Adicionar Usuário", command=add_user_gui).pack(side=tk.LEFT, padx=5)
+    tk.Button(frame_buttons, text="Atualizar Usuário", command=update_user_gui).pack(side=tk.LEFT, padx=5)
+    tk.Button(frame_buttons, text="Remover Usuário", command=remove_user_gui).pack(side=tk.LEFT, padx=5)
+
+    # Exibição de usuários com scrollbar
+    scrollbar = tk.Scrollbar(root)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    tree = ttk.Treeview(root, columns=columns, show='headings', yscrollcommand=scrollbar.set)
+    scrollbar.config(command=tree.yview)
+    tree.pack(expand=True, fill=tk.BOTH)
+
     for col in columns:
         tree.heading(col, text=col.capitalize())
         tree.column(col, width=150)
-    tree.pack(expand=True, fill=tk.BOTH)
-    
+
     update_user_list()  # Atualiza a lista de usuários ao iniciar
-    
+
     root.mainloop()
+
 
 if __name__ == "__main__":
     create_table()
