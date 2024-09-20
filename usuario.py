@@ -134,6 +134,11 @@ def update_user_list():
         rows = cursor.fetchall()
         for row in rows:
             tree.insert("", tk.END, values=row)
+def return_to_main():
+    root.destroy()
+    import main  # Importa a função main apenas quando necessário
+    main.main()  # Chama a função para iniciar a tela principal
+
 
 # Interface gráfica com tkinter
 def main_gui():
@@ -153,6 +158,9 @@ def main_gui():
     tk.Button(frame_buttons, text="Atualizar Usuário", command=update_user_gui).pack(side=tk.LEFT, padx=5)
     tk.Button(frame_buttons, text="Remover Usuário", command=remove_user_gui).pack(side=tk.LEFT, padx=5)
 
+    # Botão de Retorno
+    tk.Button(frame_buttons, text="Voltar para Tela Principal", command=return_to_main).pack(side=tk.LEFT, padx=5)
+              
     # Exibição de usuários com scrollbar
     scrollbar = tk.Scrollbar(root)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)

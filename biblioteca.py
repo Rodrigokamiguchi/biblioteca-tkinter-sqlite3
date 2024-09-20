@@ -174,6 +174,11 @@ def update_book_list():
         for row in rows:
             tree.insert("", tk.END, values=row)
 
+def return_to_main():
+    root.destroy()
+    import main  # Importa a função main apenas quando necessário
+    main.main()  # Chama a função para iniciar a tela principal
+
 def main_gui():
     global tree, root, search_entry   # Global para atualizar a lista de livros
     
@@ -195,7 +200,6 @@ def main_gui():
     search_entry = tk.Entry(frame_search)
     search_entry.pack(side=tk.LEFT, padx=5)
 
-    
     # Frame para Botões
     frame_buttons = tk.Frame(root)
     frame_buttons.pack(pady=10)
@@ -208,6 +212,8 @@ def main_gui():
     search_button = tk.Button(frame_search, text="Buscar", command=search_books)
     search_button.pack(side=tk.LEFT, padx=5)
 
+    # Botão de Retorno
+    tk.Button(frame_buttons, text="Voltar para Tela Principal", command=return_to_main).pack(side=tk.LEFT, padx=5)
 
     # Exibição de livros com scrollbar
     frame_tree = tk.Frame(root)
