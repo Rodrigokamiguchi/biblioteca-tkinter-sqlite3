@@ -17,7 +17,6 @@ def main():
     root = tk.Tk()
     root.title("Tela Principal")
     root.geometry("500x400")  # Aumentando o tamanho da janela
-    root.configure(bg="#f0f0f0")
 
     # Carregar imagem de fundo
     background_image = Image.open("biblioteca.jpg")  # Altere para o nome da sua imagem
@@ -34,16 +33,24 @@ def main():
     style.configure("TButton", padding=10, relief="flat", background="#0078D7", foreground="white")
     style.map("TButton", background=[("active", "#0056A3")])
 
-    # Título
-    title_label = tk.Label(background_label, text="Bem-vindo ao Sistema de Biblioteca", font=("Arial", 16), bg="#f0f0f0")
-    title_label.pack(pady=20)
+    # Título com fundo para legibilidade
+    title_frame = tk.Frame(background_label, bg="#f0f0f0")
+    title_frame.pack(pady=20)
+    title_label = tk.Label(title_frame, text="Bem-vindo ao Sistema de Biblioteca", font=("Arial", 16), bg="#f0f0f0", fg="black")
+    title_label.pack()
 
     # Frame para os botões
     button_frame = tk.Frame(background_label, bg="#f0f0f0")
-    button_frame.pack(pady=10)
+    button_frame.pack(pady=20)  # Aumentar o espaço acima do frame
 
-    tk.Button(button_frame, text="Abrir Biblioteca", command=open_biblioteca).pack(pady=5, padx=20, side=tk.LEFT)
-    tk.Button(button_frame, text="Abrir Criação de Usuários", command=open_usuario).pack(pady=5, padx=20, side=tk.LEFT)
+    # Botões com fundo personalizado
+    btn_biblioteca = tk.Button(button_frame, text="Abrir Biblioteca", command=open_biblioteca)
+    btn_biblioteca.configure(bg="#0078D7", activebackground="#0056A3", fg="white", borderwidth=0, font=("Arial", 12))
+    btn_biblioteca.pack(pady=5, padx=20, side=tk.LEFT)
+
+    btn_usuario = tk.Button(button_frame, text="Abrir Criação de Usuários", command=open_usuario)
+    btn_usuario.configure(bg="#0078D7", activebackground="#0056A3", fg="white", borderwidth=0, font=("Arial", 12))
+    btn_usuario.pack(pady=5, padx=20, side=tk.LEFT)
 
     root.mainloop()
 
