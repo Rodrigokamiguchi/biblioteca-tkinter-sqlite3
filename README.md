@@ -1,4 +1,4 @@
-About
+# About
 
 In this Python application, there is a main screen that opens to library screens where you can add, update, and remove books, as well as a user screen that allows for the creation of users to rent books. The libraries used are Tkinter, which is a library for graphical interface in all applications; on the main screen, the PIL library was used to add a background image; in the library and user screens, Pandas was used to create an Excel file from the database; and SQLite3, which is the database that Python already has.
 
